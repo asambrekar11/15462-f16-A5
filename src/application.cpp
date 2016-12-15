@@ -678,6 +678,9 @@ void Application::char_event( unsigned int codepoint )
             case 'b':
                toggle_bevel_action();
                break;
+            case 'x': case 'X':
+               toggle_diffuse_action();
+               break;
             case 'e':
                cycle_edit_action();
                break;
@@ -1136,6 +1139,18 @@ void Application::toggle_bevel_action()
    {
       action = Action::Navigate;
    }
+}
+
+void Application::toggle_diffuse_action()
+{
+   if( action != Action::Smoothen )
+   {
+      action = Action::Smoothen;
+   }
+   else
+   {
+      action = Action::Navigate;
+   }  
 }
 
 void Application::toggle_create_joint_action()
@@ -1897,6 +1912,9 @@ void Application::draw_action()
      case ( Action::BoneRadius ):
         actionString << "Change Threshold Radius";
         break;
+     case ( Action::Smoothen ) :
+        actionString << "Diffusion Smoothening";
+        break;   
      default:
         actionString << "(none)";
         break;

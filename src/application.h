@@ -123,14 +123,16 @@ class Application : public Renderer {
      Object,
      Pose,
      Raytrace_Video,
-     Rasterize_Video
+     Rasterize_Video,
+     Smoothen
   };
   Action action;
 
   enum class Integrator
   {
     Forward_Euler,
-    Symplectic_Euler
+    Symplectic_Euler,
+    Diffusion
   };
   Integrator integrator;
 
@@ -143,6 +145,7 @@ class Application : public Renderer {
   void to_visualize_mode();
   void to_navigate_action();
   void toggle_bevel_action();
+  void toggle_diffuse_action();
   void toggle_create_joint_action();
   void to_wave_action();
   void to_object_action();

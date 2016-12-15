@@ -157,6 +157,24 @@ void Mesh::symplectic_euler(float timestep, float damping_factor) {
   }
 }
 
+void Mesh::diffusion_solver(float timestep, float damping_factor)
+{
+  printf("Diffusion_solver called\n");
+  // First assign index to all vertices
+  size_t i = 0;
+  for (auto v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
+    v->index = i++;
+  }
+  
+  // Calculate scale dependent laplacian or scale independent laplace
+  
+  // Build the linear system
+
+  // Solve the system
+
+  // Update the positions
+}
+
 void Mesh::resetWave() {
   for (VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
     v->velocity = 0.0;

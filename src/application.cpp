@@ -233,6 +233,8 @@ void Application::render() {
                 case Integrator::Symplectic_Euler:
                   mesh->symplectic_euler(timestep, damping_factor);
                   break;
+                default:
+                  break;
               }
             }
           }
@@ -528,6 +530,7 @@ void Application::scroll_event(float offset_x, float offset_y) {
        {
           case Action::Navigate:
           case Action::Edit:
+          case Action::Smoothen:
           case Action::Bevel:
              camera.move_forward(-offset_y * scroll_rate);
              break;
@@ -675,6 +678,7 @@ void Application::char_event( unsigned int codepoint )
                     DynamicScene::Mesh *mesh = dynamic_cast<DynamicScene::Mesh*>(o);
                     if (mesh != nullptr) {
                       printf("Call diffusion integrator\n");    
+                      mesh->diffusion_solver(timestep,damping_factor);
                     }
                   }
                 }
@@ -1042,6 +1046,28 @@ void Application::keyboard_event( int key, int event, unsigned char mods )
                   show_hud = !show_hud;
                }
                break;
+            case GLFW_KEY_EQUAL:
+                if (!(mods & GLFW_MOD_ALT) || (mods & GLFW_MOD_ALT && event == GLFW_PRESS)) {
+                  if (mods & GLFW_MOD_SHIFT) {
+                    damping_factor += 0.001;
+                    if (damping_factor > 1) damping_factor = 1.0;
+                  } else {
+                    timestep += 0.01;
+                  }
+                }
+                break;
+            case GLFW_KEY_MINUS:
+                if (!(mods & GLFW_MOD_ALT) || (mods & GLFW_MOD_ALT && event == GLFW_PRESS)) {
+                  if (mods & GLFW_MOD_SHIFT) {
+                    damping_factor -= 0.001;
+                    if (damping_factor < 0.0) damping_factor = 0.0;
+                  } else {
+                    timestep -= 0.01;
+                    if (timestep < EPS_D) timestep = 0.01;
+                  }
+                }
+                break;
+          
             default:
                break;
          }
@@ -1176,6 +1202,7 @@ void Application::toggle_diffuse_action()
    if( action != Action::Smoothen )
    {
       action = Action::Smoothen;
+      integrator = Integrator::Diffusion;
    }
    else
    {
@@ -1438,7 +1465,7 @@ void Application::mouse1_dragged(float x, float y) {
 
      switch( action )
      {
-        case( Action::Navigate ):
+        case( Action::Navigate ): 
            camera.rotate_by(dy * (PI / screenH), dx * (PI / screenW));
            break;
         case( Action::Edit ):
@@ -1958,7 +1985,7 @@ void Application::draw_action()
   Color action_color(0.3, .7, 0.3);
   draw_string( x0, y, actionString.str(), size, action_color );
 
-  if (mode == ANIMATE_MODE) {
+  if (mode == ANIMATE_MODE || action == Action::Smoothen) {
     stringstream integrator_string;
     integrator_string << "Integrator: ";
     switch (integrator) {
@@ -1967,6 +1994,9 @@ void Application::draw_action()
         break;
       case Integrator::Symplectic_Euler:
         integrator_string << "Symplectic Euler";
+        break;
+      case Integrator::Diffusion:
+        integrator_string << "Diffusion Solver";
         break;
     }
     Color integrator_color(0.7, 0.3, 0.7);
@@ -1977,9 +2007,12 @@ void Application::draw_action()
     stringstream damping_string;
     damping_string << "Damping Factor: " << damping_factor;
     draw_string(x0, y + 60, damping_string.str(), size, integrator_color);
-    stringstream lbs_string;
-    lbs_string << "Linear Blend Skinning: " << (useCapsuleRadius? "Threshold" : "Naive");
-    draw_string(x0, y + 80, lbs_string.str(), size, integrator_color);
+    if (action != Action::Smoothen)
+    {
+      stringstream lbs_string;
+      lbs_string << "Linear Blend Skinning: " << (useCapsuleRadius? "Threshold" : "Naive");
+      draw_string(x0, y + 80, lbs_string.str(), size, integrator_color);
+    }
   }
 
   // // No selection --> no messages.

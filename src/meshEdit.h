@@ -1,6 +1,6 @@
 #ifndef CMU462_MESHEDIT_H
 #define CMU462_MESHEDIT_H
-
+#include <Eigen/Dense>
 #include "halfEdgeMesh.h"
 
 using namespace std;

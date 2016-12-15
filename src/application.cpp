@@ -663,11 +663,17 @@ void Application::char_event( unsigned int codepoint )
                break;
             case 's':
                // Catmull-Clark subdivision
-               scene->subdivideSelection( true );
+               if (action != Action::Smoothen)
+                 scene->subdivideSelection( true );
+               else
+                 printf("Smoothen the mesh\n");
                break;
             case 'S':
                // linear subdivision
-               scene->subdivideSelection( false );
+               if (action != Action::Smoothen)
+                 scene->subdivideSelection( false );
+               else
+                 printf("Smoothen the mesh\n");
                break;
             case 'h':
                scene->selectHalfedge();
@@ -1428,6 +1434,9 @@ void Application::mouse1_dragged(float x, float y) {
            {
               camera.rotate_by(dy * (PI / screenH), dx * (PI / screenW));
            }
+           break;
+        case ( Action::Smoothen ):
+           camera.rotate_by(dy * (PI / screenH), dx * (PI / screenW));
            break;
         default:
            break;

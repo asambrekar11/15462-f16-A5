@@ -28,7 +28,8 @@ if(APPLE)
   # Clang configuration
   if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 
-    set(CLANG_CXX_FLAGS "-std=c++11 -m64")
+    set(CLANG_CXX_FLAGS "-I /usr/local/include/eigen3/")
+    set(CLANG_CXX_FLAGS "${CLANG_CXX_FLAGS} -std=c++11 -m64")
 
     if(BUILD_DEBUG)
       set(CMAKE_BUILD_TYPE Debug)
@@ -46,7 +47,8 @@ if(APPLE)
   # GCC configuration
   if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 
-    set(GCC_CXX_FLAGS "-std=gnu++11 -m64")
+    set(GCC_CXX_FLAGS "-I /usr/local/include/eigen3/")
+    set(GCC_CXX_FLAGS "${GCC_CXX_FLAGS} -std=gnu++11 -m64")
 
     if(BUILD_DEBUG)
       set(CMAKE_BUILD_TYPE Debug)
@@ -156,6 +158,7 @@ else(BUILD_LIBCMU462)
   find_package(GLEW REQUIRED)
   find_package(GLFW REQUIRED)
 endif(BUILD_LIBCMU462)
+
 
 #-------------------------------------------------------------------------------
 # Add subdirectories

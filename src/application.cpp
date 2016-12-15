@@ -663,17 +663,41 @@ void Application::char_event( unsigned int codepoint )
                break;
             case 's':
                // Catmull-Clark subdivision
-               if (action != Action::Smoothen)
-                 scene->subdivideSelection( true );
-               else
-                 printf("Smoothen the mesh\n");
+              if (action != Action::Smoothen)
+               scene->subdivideSelection( true );
+              else
+              {
+                printf("Smoothen the mesh\n");
+                integrator = Integrator::Diffusion;
+                if (integrator == Integrator::Diffusion)
+                {
+                  for (auto o : scene->objects) {
+                    DynamicScene::Mesh *mesh = dynamic_cast<DynamicScene::Mesh*>(o);
+                    if (mesh != nullptr) {
+                      printf("Call diffusion integrator\n");    
+                    }
+                  }
+                }
+              }
                break;
             case 'S':
                // linear subdivision
                if (action != Action::Smoothen)
                  scene->subdivideSelection( false );
                else
+               {
                  printf("Smoothen the mesh\n");
+                integrator = Integrator::Diffusion;
+                if (integrator == Integrator::Diffusion)
+                {
+                  for (auto o : scene->objects) {
+                    DynamicScene::Mesh *mesh = dynamic_cast<DynamicScene::Mesh*>(o);
+                    if (mesh != nullptr) {
+                      printf("Call diffusion integrator\n");    
+                    }
+                  }
+                }
+               }
                break;
             case 'h':
                scene->selectHalfedge();

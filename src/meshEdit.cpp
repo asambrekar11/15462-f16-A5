@@ -2,6 +2,7 @@
 #include <assert.h>
 #include "meshEdit.h"
 #include "mutablePriorityQueue.h"
+#include <Eigen/IterativeLinearSolvers>
 
 
 namespace CMU462 {
@@ -1539,6 +1540,35 @@ namespace CMU462 {
     
   }
 
+
+	double HalfedgeMesh::getCurrentVolume(void) const
+	{
+		double currentMeshVolume = 0.0;
+		for( FaceCIter f = facesBegin(); f != facesEnd(); f++ )
+		{
+			currentMeshVolume += dot(f->area(), f->centroid());
+		}
+	
+		return currentMeshVolume /= 6.0;
+ 
+	}
+
+	double HalfedgeMesh::getOriginalVolume(void) const
+	 {
+		return meshVolume;
+	 }
+
+	void HalfedgeMesh::preserveVolume(void)
+	{
+		double beta = pow(getOriginalVolume() / getCurrentVolume(), 1.0 / 3.0);
+		
+		for( VertexIter v = verticesBegin(); v != verticesEnd(); v++ )
+		{
+			v->position = v->newPosition * beta; 
+		}
+	
+	}
+
   EdgeRecord::EdgeRecord(EdgeIter& _edge) : edge(_edge) {
 
     // TODO: (meshEdit)
@@ -1818,6 +1848,7 @@ namespace CMU462 {
     // -> Now flip each edge if it improves vertex degree
     // -> Finally, apply some tangential smoothing to the vertex positions
     
+    
     double meanLength = 0.0;
     int numEdges = 0;
     for ( EdgeIter e = mesh.edgesBegin(); e != mesh.edgesEnd(); e++ )
@@ -1839,18 +1870,17 @@ namespace CMU462 {
     }
     
 
-    for ( EdgeIter e = mesh.edgesBegin(); e != mesh.edgesEnd(); e++ )
-    {
-    	
-    	if(e->length() < 4.0 * meanLength / 5.0 && e->isNew)
-    	{
-    		mesh.collapseEdge(e);
-    		e->isNew = false;	
-    		
-    	}
-    }
+//     for ( EdgeIter e = mesh.edgesBegin(); e != mesh.edgesEnd(); e++ )
+//     {
+//     	
+//     	if(e->length() < 4.0 * meanLength / 5.0 && e->isNew)
+//     	{
+//     		mesh.collapseEdge(e);
+//     		e->isNew = false;	
+//     		
+//     	}
+//     }
 
-    printf("hi\n");
 	for ( EdgeIter e = mesh.edgesBegin(); e != mesh.edgesEnd(); e++ )
 	{
 		int a1 = 0, a2 = 0, b1 = 0, b2 = 0;
@@ -1911,10 +1941,14 @@ namespace CMU462 {
 	{
 		v->position = v->position + (1.0/5.0) * (v->meanPosition - v->position);
 	}
-    
-    
+
+// 	cout<<mesh.getOriginalVolume()<<endl;
+//     cout<<mesh.getCurrentVolume()<<endl;
+//     
+//     mesh.preserveVolume();
 
   }
+  
 
 } // namespace CMU462
 /*VertexIter HalfedgeMesh::collapseEdge(EdgeIter e) {

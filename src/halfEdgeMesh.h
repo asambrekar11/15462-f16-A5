@@ -506,7 +506,7 @@
          * otherwise
          */
         bool isBoundary() const { return _isBoundary; }
-
+		Vector3D area() const;
         /**
          * Get a unit face normal (computed via the area vector).
          * \returns a unit face normal (computed via the area vector).
@@ -1042,6 +1042,9 @@
         void _bevel_edge_reposition_with_dist(vector<Vector3D>& origs, vector<HalfedgeIter>& hs, double inset );
         void splitPolygon(FaceIter f);
         void splitPolygons(vector<FaceIter>& fcs);
+        double getCurrentVolume(void) const;
+        double getOriginalVolume(void) const;
+        void preserveVolume(void);
 
       protected:
 
@@ -1054,6 +1057,7 @@
         list<Edge> edges;
         list<Face> faces;
         list<Face> boundaries;
+        double meshVolume;
 
     };  // class HalfedgeMesh
 

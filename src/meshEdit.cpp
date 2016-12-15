@@ -3,6 +3,7 @@
 #include "meshEdit.h"
 #include "mutablePriorityQueue.h"
 
+
 namespace CMU462 {
 
   VertexIter HalfedgeMesh::splitEdge(EdgeIter e0) {
@@ -272,128 +273,133 @@ namespace CMU462 {
     // TODO: (meshEdit)
     // This method should collapse the given edge and return an iterator to
     // the new vertex created by the collapse.
-    std::vector<HalfedgeIter> neighbours1;
-    std::vector<HalfedgeIter> neighbours2;
     
     HalfedgeIter h1 = e->halfedge()->next();
     HalfedgeIter h2 = e->halfedge()->twin()->next();
-        
+    HalfedgeIter h1_prev = h1;
+    HalfedgeIter h2_prev = h2;
+    printf("Edgecollapse begin\n");
     do
     {
-    	neighbours1.push_back( h1 );
-    	h1 = h1->twin()->next();
-    }while(h1 != e->halfedge()->twin());
+    	h1_prev = h1_prev->next();
+    }while( h1_prev->next() != e->halfedge() );
     
     do
     {
-    	neighbours2.push_back( h2 );
-    	h2 = h2->twin()->next();
-    }while(h2 != e->halfedge());
+    	h2_prev = h2_prev->next();
+    }while( h2_prev->next() != e->halfedge()->twin());
     
-    if(neighbours1.size() >= 2 || neighbours2.size() >= 2)
+    if(h1->next() == h1_prev)
     {
-    if( neighbours1.back()->twin()->vertex() == neighbours2.front()->twin()->vertex() && neighbours1.size() >= 2) 
-    {
-
-		cout<<"size1: "<<neighbours1.size()<<endl;
-		HalfedgeIter h1_prev = neighbours1[neighbours1.size() - 2]->twin();
-		HalfedgeIter h2_prev = neighbours2.front();
-		
-// 		printf("yellllllllllllllllllllllllloooooooooo\n");
-		//halfedge assignment
-		h1_prev->next() = e->halfedge()->twin();
-		h2_prev->next() = neighbours1.back()->next();
-		
-		//face assignment
-		e->halfedge()->twin()->face() = h1_prev->face();//neighbours1.back()->face();
-		neighbours2.front()->face() = h1_prev->face();//neighbours1.back()->face();
-		
-		//neighbours1.back()->face()->halfedge() = neighbours1.back()->next();
-		h1_prev->face()->halfedge() = h1_prev;
-		
-		//vertex assignment
-		h1_prev->twin()->vertex()->halfedge() = h1_prev->twin();
-		h2_prev->twin()->vertex()->halfedge() = h2_prev->twin();
-// 		neighbours1.back()->vertex()->halfedge() = neighbours1[neighbours1.size() - 2];
-// 		neighbours1.back()->twin()->vertex()->halfedge() =neighbours2.front()->twin();
-		
-		HalfedgeIter hTBD  = neighbours1.back();
-		neighbours1.pop_back();
-		
-		deleteFace(hTBD->twin()->face());
-		deleteEdge(hTBD->edge());
-		deleteHalfedge(hTBD->twin());
-		deleteHalfedge(hTBD);
-		
-		
+    	HalfedgeIter h1_next = h1_prev->twin()->next();
+    	HalfedgeIter h1_prev_prev = h1_next;
+    	
+    	do
+    	{
+    		h1_prev_prev = h1_prev_prev->next();
+    	}while(h1_prev_prev->next() != h1_prev->twin());
+    	
+    	//halfedge assignment
+    	h1->next() = h1_next;
+    	h1_prev_prev->next() = e->halfedge();
+    	
+    	//face assignment
+    	h1_next->face()->halfedge() = h1_next;
+    	e->halfedge()->face() = h1_next->face();
+    	h1->face() = h1_next->face();
+    	
+    	//vertex assignment
+    	h1_next->vertex()->halfedge() = h1_next;
+    	h1_prev_prev->twin()->vertex()->halfedge() = h1_prev_prev->twin();
+    	
+    	deleteFace(h1_prev->face());
+    	deleteEdge(h1_prev->edge());
+    	deleteHalfedge(h1_prev->twin());
+    	deleteHalfedge(h1_prev); 	
     }
     
-    if( neighbours1.front()->twin()->vertex() == neighbours2.back()->twin()->vertex() && neighbours2.size() >= 2)
-    {
-    	cout<<"size2: "<<neighbours2.size()<<endl;
-		HalfedgeIter h2_prev = neighbours2[neighbours2.size() - 2]->twin();
-		HalfedgeIter h1_prev = neighbours1.front();
-		
-		//halfedge assignment
-		h2_prev->next() = e->halfedge();
-		h1_prev->next() = neighbours2.back()->next();
-		
-		//face assignment
-		e->halfedge()->face() = h2_prev->face();//neighbours2.back()->face();
-		neighbours1.front()->face() = h2_prev->face();//neighbours2.back()->face();
-		
-		//neighbours2.back()->face()->halfedge() = neighbours2.back()->next();
-		h2_prev->face()->halfedge() = h2_prev;
-		
-		//vertex assignment
-		h1_prev->twin()->vertex()->halfedge() = h1_prev->twin();
-		h2_prev->twin()->vertex()->halfedge() = h2_prev->twin();
-// 		neighbours2.back()->vertex()->halfedge() = neighbours2[neighbours2.size() - 2];
-// 		neighbours2.back()->twin()->vertex()->halfedge() =neighbours1.front()->twin();
-		
-		HalfedgeIter hTBD  = neighbours2.back();
-		neighbours2.pop_back();
-		
-		deleteFace(hTBD->twin()->face());
-		deleteEdge(hTBD->edge());
-		deleteHalfedge(hTBD->twin());
-		deleteHalfedge(hTBD);
-		
-		printf("here\n");
+    if(h2->next() == h2_prev)
+    {	
+    	HalfedgeIter h2_next = h2->twin()->next();
+    	HalfedgeIter h2_prev_prev = h2_next;
+    	
+    	do
+    	{
+    		h2_prev_prev = h2_prev_prev->next();	
+    	}while(h2_prev_prev->next() != h2->twin());
+    	
+    	//halfedge assignment
+    	e->halfedge()->twin()->next() = h2_next;
+    	h2_prev_prev->next() = h2_prev;
+    	
+    	//face assignment
+    	h2_next->face()->halfedge() = h2_next; 
+    	e->halfedge()->twin()->face() = h2_next->face();
+    	h2_prev->face() = h2_next->face();
+    	
+    	//vertex assignment
+    	h2->vertex()->halfedge() = h2_next;
+    	h2->twin()->vertex()->halfedge() = h2_prev_prev->twin();
+    	
+    	deleteFace(h2->face());
+    	deleteEdge(h2->edge());
+    	deleteHalfedge(h2->twin());
+    	deleteHalfedge(h2);
     }
     
-    //edge deletion
-	e->halfedge()->vertex()->position = e->centroid();
-	
-	VertexIter newVertex = e->halfedge()->vertex();
-	VertexIter vertexTBD = e->halfedge()->twin()->vertex();
-	
-	neighbours2.back()->twin()->next() = neighbours1.front(); 
-	neighbours1.back()->twin()->next() = neighbours2.front();
-
-	newVertex->halfedge() = neighbours2.back();
-
-	neighbours1.front()->face()->halfedge() = neighbours1.front();
-	neighbours2.front()->face()->halfedge() = neighbours2.front();
-
-	HalfedgeIter hTBD = e->halfedge();
-	deleteEdge(hTBD->edge());
-	deleteHalfedge(hTBD->twin());
-	deleteHalfedge(hTBD);
-	
-	
-	for(size_t i = 0; i < neighbours1.size(); i++)
-	{
-		neighbours1[i]->vertex() = newVertex;
-	}
+    e->halfedge()->vertex()->position = e->centroid();
+    
+    VertexIter newVertex = e->halfedge()->vertex();
+    VertexIter vertexTBD = e->halfedge()->twin()->vertex();
+    
+    h1 = e->halfedge()->next();
+    h1_prev = h1;
+    
+    do
+    {
+    	h1_prev = h1_prev->next();
+    }while(h1_prev->next() != e->halfedge());
+    
+    h2 = e->halfedge()->twin()->next();
+    h2_prev = h2;
+    
+    do
+    {
+    	h2_prev = h2_prev->next();
+    }while(h2_prev->next() != e->halfedge()->twin());
+     
+    HalfedgeIter h = h1;
+    vector<HalfedgeIter> neighbours;
+    do
+    {
+//     	h->vertex() = e->halfedge()->vertex();
+		neighbours.push_back(h);
+    	h = h->twin()->next();
+    }while(h != e->halfedge()->twin());
+    
+//      halfedge assignment
+    h1_prev->next() = h1;
+    h2_prev->next() = h2;
+    
+//     face assignment
+    h1->face()->halfedge() = h1;
+    h2->face()->halfedge() = h2;
+    
+    newVertex->halfedge() = h2;
+    
+    h = e->halfedge();
+    deleteEdge(h->edge());
+    deleteHalfedge(h->twin());
+    deleteHalfedge(h);
+    
+    for( int i = 0; i < neighbours.size(); i++)
+    {
+    	neighbours[i]->vertex() = newVertex;
+    } 
     
     deleteVertex(vertexTBD);
-    return newVertex;
-    
-    }else
-    {
-    	return e->halfedge()->vertex();
-    }
+    printf("Edgecollapse end\n");
+    return newVertex;	
     
   }
 
@@ -847,7 +853,6 @@ namespace CMU462 {
        f->newPosition = f->centroid();
     }
     
-    printf("calculated vertices\n");
     
   }
 
@@ -1753,7 +1758,7 @@ namespace CMU462 {
 		//compute the new quadric
 		Matrix4x4 newK = bestEdge.edge->halfedge()->vertex()->quadric + bestEdge.edge->halfedge()->twin()->vertex()->quadric;
 		
-		printf("Remove the new edges\n");
+		printf("Remove the touching edges\n");
 		//remove all the edges at the endpoints from the queue
 		HalfedgeIter h1 = bestEdge.edge->halfedge()->next();
 		HalfedgeIter h2 = bestEdge.edge->halfedge()->twin()->next();
@@ -1783,7 +1788,7 @@ namespace CMU462 {
 		//reassign all the edges touching the new vertex and store them again in the queue
 		HalfedgeIter h = collapsedVertex->halfedge();
 		
-// 		printf("Getting the halfedge of the collapsed vertex\n");
+		printf("Getting the halfedge of the collapsed vertex\n");
 		do{
 		
 		EdgeRecord eRecord(h->edge());
@@ -1794,7 +1799,7 @@ namespace CMU462 {
 		}while(h != collapsedVertex->halfedge());
 		
     	target_num_polygons--;
-//     	cout<<target_num_polygons<<endl;
+    	cout<<target_num_polygons<<endl;
     }
     
 
@@ -1827,22 +1832,25 @@ namespace CMU462 {
     cout<<meanLength<<endl;
     for ( EdgeIter e = mesh.edgesBegin(); e != mesh.edgesEnd(); e++ )
     {  	
-    	if(e->length() > 4.0*meanLength/3.0 && e->isNew)
+    	if(e->length() > 4.0 * meanLength / 3.0 && e->isNew)
     	{
     		mesh.splitEdge(e);	
     	}
     }
     
-    printf("hi\n");
-   //  for ( EdgeIter e = mesh.edgesBegin(); e != mesh.edgesEnd(); e++ )
-//     {
-//     	
-//     	if(e->length() < 4.0*meanLength/5.0)
-//     	{
-//     		mesh.collapseEdge(e);	
-//     	}
-//     }
 
+    for ( EdgeIter e = mesh.edgesBegin(); e != mesh.edgesEnd(); e++ )
+    {
+    	
+    	if(e->length() < 4.0 * meanLength / 5.0 && e->isNew)
+    	{
+    		mesh.collapseEdge(e);
+    		e->isNew = false;	
+    		
+    	}
+    }
+
+    printf("hi\n");
 	for ( EdgeIter e = mesh.edgesBegin(); e != mesh.edgesEnd(); e++ )
 	{
 		int a1 = 0, a2 = 0, b1 = 0, b2 = 0;
@@ -1909,4 +1917,134 @@ namespace CMU462 {
   }
 
 } // namespace CMU462
+/*VertexIter HalfedgeMesh::collapseEdge(EdgeIter e) {
+
+    // TODO: (meshEdit)
+    // This method should collapse the given edge and return an iterator to
+    // the new vertex created by the collapse.
+    std::vector<HalfedgeIter> neighbours1;
+    std::vector<HalfedgeIter> neighbours2;
+    
+    HalfedgeIter h1 = e->halfedge()->next();
+    HalfedgeIter h2 = e->halfedge()->twin()->next();
+        
+    do
+    {
+    	neighbours1.push_back( h1 );
+    	h1 = h1->twin()->next();
+    }while(h1 != e->halfedge()->twin());
+    
+    do
+    {
+    	neighbours2.push_back( h2 );
+    	h2 = h2->twin()->next();
+    }while(h2 != e->halfedge());
+    
+    if(neighbours1.size() >= 2 || neighbours2.size() >= 2)
+    {
+    if( neighbours1.back()->twin()->vertex() == neighbours2.front()->twin()->vertex() && neighbours1.size() >= 2) 
+    {
+
+		cout<<"size1: "<<neighbours1.size()<<endl;
+		HalfedgeIter h1_prev = neighbours1[neighbours1.size() - 2]->twin();
+		HalfedgeIter h2_prev = neighbours2.front();
+		
+// 		printf("yellllllllllllllllllllllllloooooooooo\n");
+		//halfedge assignment
+		h1_prev->next() = e->halfedge()->twin();
+		h2_prev->next() = neighbours1.back()->next();
+		
+		//face assignment
+		e->halfedge()->twin()->face() = h1_prev->face();//neighbours1.back()->face();
+		neighbours2.front()->face() = h1_prev->face();//neighbours1.back()->face();
+		
+		//neighbours1.back()->face()->halfedge() = neighbours1.back()->next();
+		h1_prev->face()->halfedge() = h1_prev;
+		
+		//vertex assignment
+		h1_prev->twin()->vertex()->halfedge() = h1_prev->twin();
+		h2_prev->twin()->vertex()->halfedge() = h2_prev->twin();
+// 		neighbours1.back()->vertex()->halfedge() = neighbours1[neighbours1.size() - 2];
+// 		neighbours1.back()->twin()->vertex()->halfedge() =neighbours2.front()->twin();
+		
+		HalfedgeIter hTBD  = neighbours1.back();
+		neighbours1.pop_back();
+		
+		deleteFace(hTBD->twin()->face());
+		deleteEdge(hTBD->edge());
+		deleteHalfedge(hTBD->twin());
+		deleteHalfedge(hTBD);
+		
+		
+    }
+    
+    if( neighbours1.front()->twin()->vertex() == neighbours2.back()->twin()->vertex() && neighbours2.size() >= 2)
+    {
+    	cout<<"size2: "<<neighbours2.size()<<endl;
+		HalfedgeIter h2_prev = neighbours2[neighbours2.size() - 2]->twin();
+		HalfedgeIter h1_prev = neighbours1.front();
+		
+		//halfedge assignment
+		h2_prev->next() = e->halfedge();
+		h1_prev->next() = neighbours2.back()->next();
+		
+		//face assignment
+		e->halfedge()->face() = h2_prev->face();//neighbours2.back()->face();
+		neighbours1.front()->face() = h2_prev->face();//neighbours2.back()->face();
+		
+		//neighbours2.back()->face()->halfedge() = neighbours2.back()->next();
+		h2_prev->face()->halfedge() = h2_prev;
+		
+		//vertex assignment
+		h1_prev->twin()->vertex()->halfedge() = h1_prev->twin();
+		h2_prev->twin()->vertex()->halfedge() = h2_prev->twin();
+// 		neighbours2.back()->vertex()->halfedge() = neighbours2[neighbours2.size() - 2];
+// 		neighbours2.back()->twin()->vertex()->halfedge() =neighbours1.front()->twin();
+		
+		HalfedgeIter hTBD  = neighbours2.back();
+		neighbours2.pop_back();
+		
+		deleteFace(hTBD->twin()->face());
+		deleteEdge(hTBD->edge());
+		deleteHalfedge(hTBD->twin());
+		deleteHalfedge(hTBD);
+		
+		printf("here\n");
+    }
+    
+    //edge deletion
+	e->halfedge()->vertex()->position = e->centroid();
+	
+	VertexIter newVertex = e->halfedge()->vertex();
+	VertexIter vertexTBD = e->halfedge()->twin()->vertex();
+	
+	neighbours2.back()->twin()->next() = neighbours1.front(); 
+	neighbours1.back()->twin()->next() = neighbours2.front();
+
+	newVertex->halfedge() = neighbours2.back();
+
+	neighbours1.front()->face()->halfedge() = neighbours1.front();
+	neighbours2.front()->face()->halfedge() = neighbours2.front();
+
+	HalfedgeIter hTBD = e->halfedge();
+	deleteEdge(hTBD->edge());
+	deleteHalfedge(hTBD->twin());
+	deleteHalfedge(hTBD);
+	
+	
+	for(size_t i = 0; i < neighbours1.size(); i++)
+	{
+		neighbours1[i]->vertex() = newVertex;
+	}
+    
+    deleteVertex(vertexTBD);
+    return newVertex;
+    
+    }else
+    {
+    	return e->halfedge()->vertex();
+    }
+    
+  }
+*/
 

@@ -44,6 +44,8 @@ Application::Application(AppConfig config)
 
    timestep = 0.1;
    damping_factor = 0.0;
+   ldt = 5e-4;
+   int_scheme_explicit = false;
    scaleDependent = true;
 
    readyWrite = false;
@@ -671,15 +673,15 @@ void Application::char_event( unsigned int codepoint )
                scene->subdivideSelection( true );
               else
               {
-                printf("Smoothen the mesh\n");
+                // printf("Smoothen the mesh\n");
                 integrator = Integrator::Diffusion;
                 if (integrator == Integrator::Diffusion)
                 {
                   for (auto o : scene->objects) {
                     DynamicScene::Mesh *mesh = dynamic_cast<DynamicScene::Mesh*>(o);
                     if (mesh != nullptr) {
-                      printf("Call diffusion integrator\n");    
-                      mesh->diffusion_solver(timestep,damping_factor,scaleDependent);
+                      // printf("Call diffusion integrator\n");    
+                      mesh->diffusion_solver(ldt,scaleDependent,int_scheme_explicit);
                     }
                   }
                 }
@@ -1048,28 +1050,21 @@ void Application::keyboard_event( int key, int event, unsigned char mods )
                }
                break;
             case GLFW_KEY_EQUAL:
-                if (!(mods & GLFW_MOD_ALT) || (mods & GLFW_MOD_ALT && event == GLFW_PRESS)) {
-                  if (mods & GLFW_MOD_SHIFT) {
-                    damping_factor += 0.001;
-                    if (damping_factor > 1) damping_factor = 1.0;
-                  } else {
-                    timestep += 0.01;
-                  }
-                }
+                ldt += 2e-5;
+                if (ldt > 0.1) ldt = 0.1; 
                 break;
             case GLFW_KEY_MINUS:
-                if (!(mods & GLFW_MOD_ALT) || (mods & GLFW_MOD_ALT && event == GLFW_PRESS)) {
-                  if (mods & GLFW_MOD_SHIFT) {
-                    damping_factor -= 0.001;
-                    if (damping_factor < 0.0) damping_factor = 0.0;
-                  } else {
-                    timestep -= 0.01;
-                    if (timestep < EPS_D) timestep = 0.01;
-                  }
-                }
+                ldt-=2e-5;
+                if (ldt < EPS_D) ldt = 2e-5;
                 break;
             case GLFW_KEY_D:
-                if (event == GLFW_PRESS) scaleDependent = !scaleDependent;
+                if (event == GLFW_PRESS) {
+                  if (mods & GLFW_MOD_SHIFT) {
+                    int_scheme_explicit = !int_scheme_explicit;
+                  } else {
+                    scaleDependent = !scaleDependent;
+                  }
+                }
                 break;
             default:
                break;
@@ -2048,22 +2043,34 @@ void Application::draw_action()
     }
     Color integrator_color(0.7, 0.3, 0.7);
     draw_string(x0, y + 20, integrator_string.str(), size, integrator_color);
-    stringstream timestep_string;
-    timestep_string << "Timestep: " << timestep;
-    draw_string(x0, y + 40, timestep_string.str(), size, integrator_color);
-    stringstream damping_string;
-    damping_string << "Damping Factor: " << damping_factor;
-    draw_string(x0, y + 60, damping_string.str(), size, integrator_color);
+    // stringstream timestep_string;
+    // timestep_string << "Timestep: " << timestep;
+    // draw_string(x0, y + 40, timestep_string.str(), size, integrator_color);
+    // stringstream damping_string;
+    // damping_string << "Damping Factor: " << damping_factor;
+    // draw_string(x0, y + 60, damping_string.str(), size, integrator_color);
     if (action != Action::Smoothen)
     {
+      stringstream timestep_string;
+      timestep_string << "Timestep: " << timestep;
+      draw_string(x0, y + 40, timestep_string.str(), size, integrator_color);
+      stringstream damping_string;
+      damping_string << "Damping Factor: " << damping_factor;
+      draw_string(x0, y + 60, damping_string.str(), size, integrator_color);
       stringstream lbs_string;
       lbs_string << "Linear Blend Skinning: " << (useCapsuleRadius? "Threshold" : "Naive");
       draw_string(x0, y + 80, lbs_string.str(), size, integrator_color);
     }
     else
     {
+      stringstream ldt_string;
+      ldt_string << "Lambda delta T: " << ldt;
+      draw_string(x0, y + 40, ldt_string.str(), size, integrator_color);
+      stringstream int_scheme_string;
+      int_scheme_string << "Integration Scheme: " << (int_scheme_explicit ? "Explicit" : "Implicit");
+      draw_string(x0, y + 60, int_scheme_string.str(), size, integrator_color);
       stringstream scale_string;
-      scale_string << "Scale Dependence: " << (scaleDependent ? "True" : "False");
+      scale_string << "Operator Type: " << (scaleDependent ? "3D Laplacian" : "Mean Curvature");
       draw_string(x0, y + 80, scale_string.str(), size, integrator_color); 
     }
   }

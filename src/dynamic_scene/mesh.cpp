@@ -158,13 +158,13 @@ void Mesh::symplectic_euler(float timestep, float damping_factor) {
   }
 }
 
-void Mesh::diffusion_solver(float timestep, float damping_factor, bool scaleDependent)
+void Mesh::diffusion_solver(float ldt, bool scaleDependent, bool explicitScheme)
 {
-  printf("Diffusion_solver called\n");
+  // printf("Diffusion_solver called\n");
   // First assign index to all vertices
   mesh.triangulate();
   size_t nVtx = mesh.nVertices();
-  float ldt = 5e-3;//timestep*damping_factor;
+  // float ldt = 5e-3;//timestep*damping_factor;
   size_t i = 0;
   VectorXd Xn(nVtx),Yn(nVtx),Zn(nVtx),Xn1(nVtx),Yn1(nVtx),Zn1(nVtx);
   // map<size_t,VertexIter> indexToVertex;
@@ -178,12 +178,12 @@ void Mesh::diffusion_solver(float timestep, float damping_factor, bool scaleDepe
   }
 
   // Calculate scale dependent laplacian or scale independent laplace
-  if (scaleDependent) {
-    printf("It is scale dependent\n");
-  }
-  else {
-    printf("Not scale dependent\n");
-  }
+  // if (scaleDependent) {
+  //   printf("It is scale dependent\n");
+  // }
+  // else {
+  //   printf("Not scale dependent\n");
+  // }
 
   // Build the linear system
   SparseMatrix<double> A(nVtx,nVtx);
@@ -217,7 +217,7 @@ void Mesh::diffusion_solver(float timestep, float damping_factor, bool scaleDepe
         double alpha = acosf( dot(alpha_i, alpha_j) / ( alpha_i.norm() * alpha_j.norm() ) );
         double beta = acosf( dot(beta_i, beta_j) / ( beta_i.norm() * beta_j.norm() ) );
         
-        double temp = (0.25 * ( (1.0 / tanf(alpha) ) + (1.0 / tanf(beta) ) ));
+        double temp = -(0.25 * ( (1.0 / tanf(alpha) ) + (1.0 / tanf(beta) ) ));
         A.coeffRef(i,j) = temp;
         A.coeffRef(i,i) -= temp;
       }
@@ -252,17 +252,17 @@ void Mesh::diffusion_solver(float timestep, float damping_factor, bool scaleDepe
     Xn1 = cgX.solve(Xn);
     Yn1 = cgY.solve(Yn);
     Zn1 = cgZ.solve(Zn);
-    std::cout<<"X co-ordinate"<<std::endl;
-    std::cout<<"#iterations = "<<cgX.iterations()<<std::endl;
-    std::cout<<"Estimated error = "<<cgX.error()<<std::endl;
+    // std::cout<<"X co-ordinate"<<std::endl;
+    // std::cout<<"#iterations = "<<cgX.iterations()<<std::endl;
+    // std::cout<<"Estimated error = "<<cgX.error()<<std::endl;
 
-    std::cout<<"Y co-ordinate"<<std::endl;
-    std::cout<<"#iterations = "<<cgY.iterations()<<std::endl;
-    std::cout<<"Estimated error = "<<cgY.error()<<std::endl;
+    // std::cout<<"Y co-ordinate"<<std::endl;
+    // std::cout<<"#iterations = "<<cgY.iterations()<<std::endl;
+    // std::cout<<"Estimated error = "<<cgY.error()<<std::endl;
 
-    std::cout<<"Z co-ordinate"<<std::endl;
-    std::cout<<"#iterations = "<<cgZ.iterations()<<std::endl;
-    std::cout<<"Estimated error = "<<cgZ.error()<<std::endl;
+    // std::cout<<"Z co-ordinate"<<std::endl;
+    // std::cout<<"#iterations = "<<cgZ.iterations()<<std::endl;
+    // std::cout<<"Estimated error = "<<cgZ.error()<<std::endl;
     if ((cgX.error() > 1e-6 && cgY.error() > 1e-6 && cgZ.error() > 1e-6))
     {
       Xn = Xn1;
@@ -271,14 +271,18 @@ void Mesh::diffusion_solver(float timestep, float damping_factor, bool scaleDepe
     }
   } while (cgX.error() > 1e-6 && cgY.error() > 1e-6 && cgZ.error() > 1e-6);
 
+  if (cgX.info() == Success && cgY.info() == Success && cgZ.info() == Success) {
   // Update the positions
-  for (auto v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++)
-  {
-    v->position.x = Xn1(v->index);
-    v->position.y = Yn1(v->index);
-    v->position.z = Zn1(v->index);
+    for (auto v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++)
+    {
+      v->position.x = Xn1(v->index);
+      v->position.y = Yn1(v->index);
+      v->position.z = Zn1(v->index);
+    }
+    mesh.preserveVolume();
+  } else {
+    printf("Unable to solve further. Try with different operator\n");
   }
-  mesh.preserveVolume();
 }
 
 void Mesh::resetWave() {
@@ -655,6 +659,7 @@ void Mesh::collapse_selected_element() {
    if (edge != nullptr)
    {
       v = mesh.collapseEdge(edge->halfedge()->edge());
+      // printf("Edge collapsed\n");
    }
    else if( face != nullptr )
    {
@@ -664,7 +669,6 @@ void Mesh::collapse_selected_element() {
    {
       return;
    }
-
    scene->selected.element = elementAddress( v );
    scene->hovered.clear();
    scene->elementTransform->target.clear();

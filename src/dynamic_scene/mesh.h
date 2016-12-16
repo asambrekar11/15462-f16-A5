@@ -64,7 +64,7 @@ class Mesh : public SceneObject {
   void linearBlendSkinning(bool useCapsuleRadius);
   void forward_euler(float timestep, float damping_factor);
   void symplectic_euler(float timestep, float damping_factor);
-  void diffusion_solver(float timestep, float damping_factor, bool scaleDependent = true);
+  void diffusion_solver(float ldt, bool scaleDependent = true, bool explicitScheme = false);
   void resetWave();
   void keyframe(double t);
   void unkeyframe(double t);

@@ -217,7 +217,7 @@ void Mesh::diffusion_solver(float ldt, bool scaleDependent, bool explicitScheme)
         double alpha = acosf( dot(alpha_i, alpha_j) / ( alpha_i.norm() * alpha_j.norm() ) );
         double beta = acosf( dot(beta_i, beta_j) / ( beta_i.norm() * beta_j.norm() ) );
         
-        double temp = -(0.25 * ( (1.0 / tanf(alpha) ) + (1.0 / tanf(beta) ) ));
+        double temp = (0.25 * ( (1.0 / tanf(alpha) ) + (1.0 / tanf(beta) ) ));
         A.coeffRef(i,j) = temp;
         A.coeffRef(i,i) -= temp;
       }
@@ -273,7 +273,6 @@ void Mesh::diffusion_solver(float ldt, bool scaleDependent, bool explicitScheme)
 
   if (cgX.info() == Success && cgY.info() == Success && cgZ.info() == Success) {
   // Update the positions
-<<<<<<< HEAD
     for (auto v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++)
     {
       v->position.x = Xn1(v->index);
@@ -284,25 +283,6 @@ void Mesh::diffusion_solver(float ldt, bool scaleDependent, bool explicitScheme)
   } else {
     printf("Unable to solve further. Try with different operator\n");
   }
-=======
-  if(cgX.info() == Success || cgY.info() == Success || cgZ.info() == Success)
-  {
-  	
-	 for (auto v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++)
-	  {
-			v->position.x = Xn1(v->index);
-			v->position.y = Yn1(v->index);
-			v->position.z = Zn1(v->index);
-	
-	  }
-	  mesh.preserveVolume();
-   }else
-   {
-		printf("Mesh cannot be smoothened further as the system becomes degenerate\n");
-   } 
-  
-  
->>>>>>> 1a2e7a949c7264c41faf389c287774a14d4eca5d
 }
 
 void Mesh::resetWave() {

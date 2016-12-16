@@ -272,13 +272,23 @@ void Mesh::diffusion_solver(float timestep, float damping_factor, bool scaleDepe
   } while (cgX.error() > 1e-6 && cgY.error() > 1e-6 && cgZ.error() > 1e-6);
 
   // Update the positions
-  for (auto v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++)
+  if(cgX.info() == Success || cgY.info() == Success || cgZ.info() == Success)
   {
-    v->position.x = Xn1(v->index);
-    v->position.y = Yn1(v->index);
-    v->position.z = Zn1(v->index);
-  }
-  mesh.preserveVolume();
+  	
+	 for (auto v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++)
+	  {
+			v->position.x = Xn1(v->index);
+			v->position.y = Yn1(v->index);
+			v->position.z = Zn1(v->index);
+	
+	  }
+	  mesh.preserveVolume();
+   }else
+   {
+		printf("Mesh cannot be smoothened further as the system becomes degenerate\n");
+   } 
+  
+  
 }
 
 void Mesh::resetWave() {

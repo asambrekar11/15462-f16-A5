@@ -31,13 +31,13 @@ namespace CMU462 {
   bool Edge::isBoundary() { return halfedge()->face()->isBoundary(); }
 	Vector3D Face::area() const {
 		Vector3D N(0., 0., 0.);
-
+    Vector3D c = centroid();
 		HalfedgeCIter h = halfedge();
 		do {
 		  Vector3D pi = h->vertex()->position;
 		  Vector3D pj = h->next()->vertex()->position;
 
-		  N += cross(pi, pj);
+		  N += 0.5*cross(pi-c, pj-c);
 
 		  h = h->next();
 		} while (h != halfedge());
@@ -423,7 +423,7 @@ namespace CMU462 {
   		meshVolume += dot(f->area(), f->centroid());
   	}
   	
-  	meshVolume /= 6.0;
+  	meshVolume /= 3.0;
   }  // end HalfedgeMesh::build()
 
   /**

@@ -1549,7 +1549,7 @@ namespace CMU462 {
 			currentMeshVolume += dot(f->area(), f->centroid());
 		}
 	
-		return currentMeshVolume /= 6.0;
+		return currentMeshVolume /= 3.0;
  
 	}
 
@@ -1560,11 +1560,17 @@ namespace CMU462 {
 
 	void HalfedgeMesh::preserveVolume(void)
 	{
-		double beta = pow(getOriginalVolume() / getCurrentVolume(), 1.0 / 3.0);
-		
+		double beta = pow(getOriginalVolume() / getCurrentVolume(), 1.0/3.0);
+		cout<<"Original Volume = "<<getOriginalVolume()<<endl<<"New volume = "<<getCurrentVolume()<<endl;
+		Vector3D centroid;
+		for (auto v = verticesBegin(); v != verticesEnd(); v++)
+		{
+			centroid += v->position;
+		}
+		centroid /= nVertices();
 		for( VertexIter v = verticesBegin(); v != verticesEnd(); v++ )
 		{
-			v->position = v->newPosition * beta; 
+			v->position = (v->position - centroid) * beta + centroid; 
 		}
 	
 	}
@@ -1849,25 +1855,25 @@ namespace CMU462 {
     // -> Finally, apply some tangential smoothing to the vertex positions
     
     
-    double meanLength = 0.0;
-    int numEdges = 0;
-    for ( EdgeIter e = mesh.edgesBegin(); e != mesh.edgesEnd(); e++ )
-    {
-    	meanLength += e->length();
-    	e->isNew = true;
-    	numEdges++;
-    }
+    // double meanLength = 0.0;
+    // int numEdges = 0;
+    // for ( EdgeIter e = mesh.edgesBegin(); e != mesh.edgesEnd(); e++ )
+    // {
+    // 	meanLength += e->length();
+    // 	e->isNew = true;
+    // 	numEdges++;
+    // }
     
-    meanLength /= numEdges;
+    // meanLength /= numEdges;
     
-    cout<<meanLength<<endl;
-    for ( EdgeIter e = mesh.edgesBegin(); e != mesh.edgesEnd(); e++ )
-    {  	
-    	if(e->length() > 4.0 * meanLength / 3.0 && e->isNew)
-    	{
-    		mesh.splitEdge(e);	
-    	}
-    }
+    // cout<<meanLength<<endl;
+    // for ( EdgeIter e = mesh.edgesBegin(); e != mesh.edgesEnd(); e++ )
+    // {  	
+    // 	if(e->length() > 4.0 * meanLength / 3.0 && e->isNew)
+    // 	{
+    // 		mesh.splitEdge(e);	
+    // 	}
+    // }
     
 
 //     for ( EdgeIter e = mesh.edgesBegin(); e != mesh.edgesEnd(); e++ )
@@ -1881,71 +1887,71 @@ namespace CMU462 {
 //     	}
 //     }
 
-	for ( EdgeIter e = mesh.edgesBegin(); e != mesh.edgesEnd(); e++ )
-	{
-		int a1 = 0, a2 = 0, b1 = 0, b2 = 0;
+// 	for ( EdgeIter e = mesh.edgesBegin(); e != mesh.edgesEnd(); e++ )
+// 	{
+// 		int a1 = 0, a2 = 0, b1 = 0, b2 = 0;
 		
-		HalfedgeIter h = e->halfedge()->vertex()->halfedge();
+// 		HalfedgeIter h = e->halfedge()->vertex()->halfedge();
 		
-		//at edge end points
-		do
-		{
-			a1++;
-			h = h->twin()->next();
-		}while(h != e->halfedge()->vertex()->halfedge());
+// 		//at edge end points
+// 		do
+// 		{
+// 			a1++;
+// 			h = h->twin()->next();
+// 		}while(h != e->halfedge()->vertex()->halfedge());
 		
-		h = e->halfedge()->twin()->vertex()->halfedge();
+// 		h = e->halfedge()->twin()->vertex()->halfedge();
 		
-		do
-		{
-			a2++;
-			h = h->twin()->next();
-		}while(h != e->halfedge()->twin()->vertex()->halfedge());
+// 		do
+// 		{
+// 			a2++;
+// 			h = h->twin()->next();
+// 		}while(h != e->halfedge()->twin()->vertex()->halfedge());
 		
-		h = e->halfedge()->next()->twin()->vertex()->halfedge();
+// 		h = e->halfedge()->next()->twin()->vertex()->halfedge();
 		
-		//across the edge
-		do
-		{
-			b1++;
-			h = h->twin()->next();
-		}while(h != e->halfedge()->next()->twin()->vertex()->halfedge());
+// 		//across the edge
+// 		do
+// 		{
+// 			b1++;
+// 			h = h->twin()->next();
+// 		}while(h != e->halfedge()->next()->twin()->vertex()->halfedge());
 		
-		h = e->halfedge()->twin()->next()->twin()->vertex()->halfedge();
+// 		h = e->halfedge()->twin()->next()->twin()->vertex()->halfedge();
 		
-		do
-		{
-			b2++;
-			h = h->twin()->next();
-		}while(h != e->halfedge()->twin()->next()->twin()->vertex()->halfedge());
+// 		do
+// 		{
+// 			b2++;
+// 			h = h->twin()->next();
+// 		}while(h != e->halfedge()->twin()->next()->twin()->vertex()->halfedge());
 		
-		int initValence = abs(a1 - 6) + abs(a2 - 6) + abs(b1 - 6) + abs(b2 - 6);
+// 		int initValence = abs(a1 - 6) + abs(a2 - 6) + abs(b1 - 6) + abs(b2 - 6);
 		
-		int currValence =  abs(a1 - 1 - 6) + abs(a2 - 1 - 6) + abs(b1 + 1 - 6) + abs(b2 + 1 - 6);
+// 		int currValence =  abs(a1 - 1 - 6) + abs(a2 - 1 - 6) + abs(b1 + 1 - 6) + abs(b2 + 1 - 6);
 		
 		
-		if(currValence < initValence)
-		{
-// 			cout<<"initValence: "<<initValence<<" "<<"currValence: "<<currValence<<endl;
-			mesh.flipEdge(e);
-		}
+// 		if(currValence < initValence)
+// 		{
+// // 			cout<<"initValence: "<<initValence<<" "<<"currValence: "<<currValence<<endl;
+// 			mesh.flipEdge(e);
+// 		}
 		
-	}
+// 	}
 
-	for( VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++ )
-	{
-		v->meanPosition = v->neighborhoodCentroid();
-	}
+// 	for( VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++ )
+// 	{
+// 		v->meanPosition = v->neighborhoodCentroid();
+// 	}
 	
-	for( VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++ )
-	{
-		v->position = v->position + (1.0/5.0) * (v->meanPosition - v->position);
-	}
+// 	for( VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++ )
+// 	{
+// 		v->position = v->position + (1.0/5.0) * (v->meanPosition - v->position);
+// 	}
 
-// 	cout<<mesh.getOriginalVolume()<<endl;
-//     cout<<mesh.getCurrentVolume()<<endl;
-//     
-//     mesh.preserveVolume();
+		cout<<"Original Volume : "<<mesh.getOriginalVolume()<<endl;
+    // cout<<mesh.getCurrentVolume()<<endl;
+    
+    mesh.preserveVolume();
 
   }
   

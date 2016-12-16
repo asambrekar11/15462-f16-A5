@@ -169,6 +169,7 @@ class Application : public Renderer {
 
   double timestep;
   double damping_factor;
+  bool scaleDependent;
 
   // Length of diagonal of bounding box for the mesh.
   // Guranteed to not have the camera occlude with the mes.

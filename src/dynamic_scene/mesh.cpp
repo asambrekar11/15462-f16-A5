@@ -8,6 +8,7 @@
 #include "../static_scene/object.h"
 
 using std::ostringstream;
+using namespace Eigen;
 
 namespace CMU462 { namespace DynamicScene {
 
@@ -157,22 +158,127 @@ void Mesh::symplectic_euler(float timestep, float damping_factor) {
   }
 }
 
-void Mesh::diffusion_solver(float timestep, float damping_factor)
+void Mesh::diffusion_solver(float timestep, float damping_factor, bool scaleDependent)
 {
   printf("Diffusion_solver called\n");
   // First assign index to all vertices
+  mesh.triangulate();
+  size_t nVtx = mesh.nVertices();
+  float ldt = 5e-3;//timestep*damping_factor;
   size_t i = 0;
+  VectorXd Xn(nVtx),Yn(nVtx),Zn(nVtx),Xn1(nVtx),Yn1(nVtx),Zn1(nVtx);
+  // map<size_t,VertexIter> indexToVertex;
   for (auto v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
-    v->index = i++;
+    v->index = i;
+    Xn(i) = v->position.x;
+    Yn(i) = v->position.y;
+    Zn(i) = v->position.z;
+    // indexToVertex[i] = v;
+    i++;
   }
-  
+
   // Calculate scale dependent laplacian or scale independent laplace
-  
+  if (scaleDependent) {
+    printf("It is scale dependent\n");
+  }
+  else {
+    printf("Not scale dependent\n");
+  }
+
   // Build the linear system
+  SparseMatrix<double> A(nVtx,nVtx);
+  for (auto v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
+    std::vector<size_t> neighbourIdx;
+    size_t i = v->index;
+    Vector3D xi = v->position;
+    double E = 0.0;
+    auto currHalfedge = v->halfedge();
+    do {
+      size_t j = currHalfedge->next()->vertex()->index;
+      neighbourIdx.push_back(j);
+      Vector3D xj = currHalfedge->next()->vertex()->position;
+      if (scaleDependent) {
+        double eij = (xj-xi).norm();
+        E += eij;
+        A.coeffRef(i,j) = 1.0/eij;
+        A.coeffRef(i,i) -= 1.0/eij;
+      }
+      else {
+        E += currHalfedge->face()->area().norm();
+        Vector3D vec_alpha = currHalfedge->twin()->next()->twin()->vertex()->position; 
+        Vector3D vec_beta  = currHalfedge->next()->twin()->vertex()->position;
+        
+        Vector3D alpha_i = xi - vec_alpha;
+        Vector3D alpha_j = xj - vec_alpha;
+        
+        Vector3D beta_i = xi - vec_beta;
+        Vector3D beta_j = xj - vec_beta;
+        
+        double alpha = acosf( dot(alpha_i, alpha_j) / ( alpha_i.norm() * alpha_j.norm() ) );
+        double beta = acosf( dot(beta_i, beta_j) / ( beta_i.norm() * beta_j.norm() ) );
+        
+        double temp = (0.25 * ( (1.0 / tanf(alpha) ) + (1.0 / tanf(beta) ) ));
+        A.coeffRef(i,j) = temp;
+        A.coeffRef(i,i) -= temp;
+      }
+      currHalfedge = currHalfedge->twin()->next();
+    } while(currHalfedge != v->halfedge());
+    if (scaleDependent) {
+      A.coeffRef(i,i) *= 2.0/E;
+      A.coeffRef(i,i) = 1.0 - ldt*A.coeffRef(i,i);
+    }
+    else {
+      A.coeffRef(i,i) *= 1.0/E;
+      A.coeffRef(i,i) = 1.0 - ldt*A.coeffRef(i,i);
+    }
+    for (auto j : neighbourIdx) {
+      if (scaleDependent) {
+        A.coeffRef(i,j) *= 2.0/E;
+      }
+      else {
+        A.coeffRef(i,j) *= 1.0/E;
+      }
+      A.coeffRef(i,j) *= -ldt;
+    }
+  }
 
   // Solve the system
+  BiCGSTAB<SparseMatrix<double>> cgX,cgY,cgZ;
+  cgX.compute(A);
+  cgY.compute(A);
+  cgZ.compute(A);
+
+  do {
+    Xn1 = cgX.solve(Xn);
+    Yn1 = cgY.solve(Yn);
+    Zn1 = cgZ.solve(Zn);
+    std::cout<<"X co-ordinate"<<std::endl;
+    std::cout<<"#iterations = "<<cgX.iterations()<<std::endl;
+    std::cout<<"Estimated error = "<<cgX.error()<<std::endl;
+
+    std::cout<<"Y co-ordinate"<<std::endl;
+    std::cout<<"#iterations = "<<cgY.iterations()<<std::endl;
+    std::cout<<"Estimated error = "<<cgY.error()<<std::endl;
+
+    std::cout<<"Z co-ordinate"<<std::endl;
+    std::cout<<"#iterations = "<<cgZ.iterations()<<std::endl;
+    std::cout<<"Estimated error = "<<cgZ.error()<<std::endl;
+    if ((cgX.error() > 1e-6 && cgY.error() > 1e-6 && cgZ.error() > 1e-6))
+    {
+      Xn = Xn1;
+      Yn = Yn1;
+      Zn = Zn1;
+    }
+  } while (cgX.error() > 1e-6 && cgY.error() > 1e-6 && cgZ.error() > 1e-6);
 
   // Update the positions
+  for (auto v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++)
+  {
+    v->position.x = Xn1(v->index);
+    v->position.y = Yn1(v->index);
+    v->position.z = Zn1(v->index);
+  }
+  mesh.preserveVolume();
 }
 
 void Mesh::resetWave() {

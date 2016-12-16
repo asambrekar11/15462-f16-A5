@@ -2,6 +2,7 @@
 #define CMU462_DYNAMICSCENE_MESH_H
 
 #include <Eigen/Sparse>
+#include <map>
 #include "scene.h"
 
 #include "../collada/polymesh_info.h"
@@ -63,7 +64,7 @@ class Mesh : public SceneObject {
   void linearBlendSkinning(bool useCapsuleRadius);
   void forward_euler(float timestep, float damping_factor);
   void symplectic_euler(float timestep, float damping_factor);
-  void diffusion_solver(float timestep, float damping_factor);
+  void diffusion_solver(float timestep, float damping_factor, bool scaleDependent = true);
   void resetWave();
   void keyframe(double t);
   void unkeyframe(double t);

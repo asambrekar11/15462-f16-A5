@@ -224,12 +224,29 @@ void Mesh::diffusion_solver(float ldt, bool scaleDependent, bool explicitScheme)
       currHalfedge = currHalfedge->twin()->next();
     } while(currHalfedge != v->halfedge());
     if (scaleDependent) {
-      A.coeffRef(i,i) *= 2.0/E;
-      A.coeffRef(i,i) = 1.0 - ldt*A.coeffRef(i,i);
+    	if(explicitScheme)
+    	{
+    		A.coeffRef(i,i) *= 2.0/E;
+			A.coeffRef(i,i) = 1.0 + ldt*A.coeffRef(i,i);
+    	}else
+    	{
+    		A.coeffRef(i,i) *= 2.0/E;
+			A.coeffRef(i,i) = 1.0 - ldt*A.coeffRef(i,i);
+    	}
+      
     }
     else {
-      A.coeffRef(i,i) *= 1.0/E;
-      A.coeffRef(i,i) = 1.0 - ldt*A.coeffRef(i,i);
+    
+    	if(explicitScheme)
+    	{
+    		 A.coeffRef(i,i) *= 1.0/E;
+		  	 A.coeffRef(i,i) = 1.0 + ldt*A.coeffRef(i,i);
+    	}else
+    	{
+    		 A.coeffRef(i,i) *= 1.0/E;
+		     A.coeffRef(i,i) = 1.0 - ldt*A.coeffRef(i,i);
+    	}
+     
     }
     for (auto j : neighbourIdx) {
       if (scaleDependent) {
@@ -238,50 +255,75 @@ void Mesh::diffusion_solver(float ldt, bool scaleDependent, bool explicitScheme)
       else {
         A.coeffRef(i,j) *= 1.0/E;
       }
-      A.coeffRef(i,j) *= -ldt;
+      if(explicitScheme)
+      {
+      	A.coeffRef(i,j) *= ldt;
+      }else
+      {
+      	A.coeffRef(i,j) *= -ldt;
+      }
+      
     }
   }
 
-  // Solve the system
-  BiCGSTAB<SparseMatrix<double>> cgX,cgY,cgZ;
-  cgX.compute(A);
-  cgY.compute(A);
-  cgZ.compute(A);
 
-  do {
-    Xn1 = cgX.solve(Xn);
-    Yn1 = cgY.solve(Yn);
-    Zn1 = cgZ.solve(Zn);
-    // std::cout<<"X co-ordinate"<<std::endl;
-    // std::cout<<"#iterations = "<<cgX.iterations()<<std::endl;
-    // std::cout<<"Estimated error = "<<cgX.error()<<std::endl;
+  if(explicitScheme)
+  {
+  	Xn1 = A * Xn;
+  	Yn1 = A * Yn;
+  	Zn1 = A * Zn;
+  	
+  	for (auto v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++)
+	{
+	  v->position.x = Xn1(v->index);
+	  v->position.y = Yn1(v->index);
+	  v->position.z = Zn1(v->index);
+	}
+	mesh.preserveVolume();
 
-    // std::cout<<"Y co-ordinate"<<std::endl;
-    // std::cout<<"#iterations = "<<cgY.iterations()<<std::endl;
-    // std::cout<<"Estimated error = "<<cgY.error()<<std::endl;
+  }else
+  {
+	  // Solve the system
+	  BiCGSTAB<SparseMatrix<double>> cgX,cgY,cgZ;
+	  cgX.compute(A);
+	  cgY.compute(A);
+	  cgZ.compute(A);
 
-    // std::cout<<"Z co-ordinate"<<std::endl;
-    // std::cout<<"#iterations = "<<cgZ.iterations()<<std::endl;
-    // std::cout<<"Estimated error = "<<cgZ.error()<<std::endl;
-    if ((cgX.error() > 1e-6 && cgY.error() > 1e-6 && cgZ.error() > 1e-6))
-    {
-      Xn = Xn1;
-      Yn = Yn1;
-      Zn = Zn1;
-    }
-  } while (cgX.error() > 1e-6 && cgY.error() > 1e-6 && cgZ.error() > 1e-6);
+	  do {
+		Xn1 = cgX.solve(Xn);
+		Yn1 = cgY.solve(Yn);
+		Zn1 = cgZ.solve(Zn);
+		// std::cout<<"X co-ordinate"<<std::endl;
+		// std::cout<<"#iterations = "<<cgX.iterations()<<std::endl;
+		// std::cout<<"Estimated error = "<<cgX.error()<<std::endl;
 
-  if (cgX.info() == Success && cgY.info() == Success && cgZ.info() == Success) {
-  // Update the positions
-    for (auto v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++)
-    {
-      v->position.x = Xn1(v->index);
-      v->position.y = Yn1(v->index);
-      v->position.z = Zn1(v->index);
-    }
-    mesh.preserveVolume();
-  } else {
-    printf("Unable to solve further. Try with different operator\n");
+		// std::cout<<"Y co-ordinate"<<std::endl;
+		// std::cout<<"#iterations = "<<cgY.iterations()<<std::endl;
+		// std::cout<<"Estimated error = "<<cgY.error()<<std::endl;
+
+		// std::cout<<"Z co-ordinate"<<std::endl;
+		// std::cout<<"#iterations = "<<cgZ.iterations()<<std::endl;
+		// std::cout<<"Estimated error = "<<cgZ.error()<<std::endl;
+		if ((cgX.error() > 1e-6 && cgY.error() > 1e-6 && cgZ.error() > 1e-6))
+		{
+		  Xn = Xn1;
+		  Yn = Yn1;
+		  Zn = Zn1;
+		}
+	  } while (cgX.error() > 1e-6 && cgY.error() > 1e-6 && cgZ.error() > 1e-6);
+
+	  if (cgX.info() == Success && cgY.info() == Success && cgZ.info() == Success) {
+	  // Update the positions
+		for (auto v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++)
+		{
+		  v->position.x = Xn1(v->index);
+		  v->position.y = Yn1(v->index);
+		  v->position.z = Zn1(v->index);
+		}
+		mesh.preserveVolume();
+	  } else {
+		printf("Unable to solve further. Try with different operator\n");
+	  }
   }
 }
 

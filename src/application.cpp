@@ -819,7 +819,7 @@ void Application::updateWidgets()
   }
 
   if (mode == MODEL_MODE) {
-    if (action == Action::Edit || action == Action::Smoothen) {
+    if (action == Action::Edit) {
       if( scene->selected.object != scene->elementTransform &&
           scene->selected.element != nullptr )  {
         scene->elementTransform->setTarget( scene->selected );
@@ -1058,7 +1058,7 @@ void Application::keyboard_event( int key, int event, unsigned char mods )
                 if (ldt < EPS_D) ldt = 2e-5;
                 break;
             case GLFW_KEY_D:
-                if (event == GLFW_PRESS) {
+                if (event == GLFW_PRESS && action == Action::Smoothen) {
                   if (mods & GLFW_MOD_SHIFT) {
                     int_scheme_explicit = !int_scheme_explicit;
                   } else {
@@ -1304,12 +1304,7 @@ void Application::mouse_pressed(e_mouse_button b) {
         {
           scene->bevel_selected_element();
         }
-        if (action == Action::Smoothen) {
-            if (scene->selected.element != nullptr && scene->selected.element->getInfo()[0][0] != 'V') {
-              scene->selected.element = nullptr;
-              scene->selected.object = nullptr;
-            }
-          }
+        
       }
       else if (mode == ANIMATE_MODE)
       {
@@ -1378,19 +1373,11 @@ void Application::setupElementTransformWidget()
     case VISUALIZE_MODE:
       break;
     case MODEL_MODE:
-      if(scene->selected.element != nullptr) {
-        if (action == Action::Smoothen) {
-          scene->elementTransform->exitObjectMode();
-          scene->elementTransform->enterTransformedMode();
-          scene->elementTransform->setTarget(scene->selected);
-          scene->addObject(scene->elementTransform);
-        }
-        else {
-          scene->elementTransform->exitObjectMode();
-          scene->elementTransform->exitTransformedMode();
-          scene->elementTransform->setTarget( scene->selected );
-          scene->addObject( scene->elementTransform );
-        }
+      if(scene->selected.element != nullptr) { 
+        scene->elementTransform->exitObjectMode();
+        scene->elementTransform->exitTransformedMode();
+        scene->elementTransform->setTarget( scene->selected );
+        scene->addObject( scene->elementTransform );
       }
       break;
     case ANIMATE_MODE:
@@ -1499,34 +1486,8 @@ void Application::mouse1_dragged(float x, float y) {
            }
            break;
         case ( Action::Smoothen ):
-            if (scene->has_selection()) {
-              Vertex *v = (Vertex*)scene->elementTransform->target.element;
-              Vector3D initialPos = v->position;
-              dragSelection( x, y, dx, dy, get_world_to_3DH() );
-              float dPos = dot(v->position - initialPos, v->normal());
-              v->position = initialPos;
-              map<HalfedgeIter, double> seen;
-              v->smoothNeighborhood(dPos, seen, 5);
-              // Preserve volume
-              DynamicScene::Mesh *mesh = dynamic_cast<DynamicScene::Mesh*>(scene->elementTransform->target.object);
-              if (mesh != nullptr) {
-                HalfedgeMesh& halfEdgeMesh = mesh->mesh;
-                double avg = 0.0;
-                int i = 0;
-                for (VertexIter v = halfEdgeMesh.verticesBegin(); v != halfEdgeMesh.verticesEnd(); v++) {
-                  avg += v->offset;
-                  i++;
-                }
-                avg /= i;
-
-                for (VertexIter v = halfEdgeMesh.verticesBegin(); v != halfEdgeMesh.verticesEnd(); v++) {
-                  v->offset = v->offset - avg;
-                }
-              }
-            } else {
-             camera.rotate_by(dy * (PI / screenH), dx * (PI / screenW));
-            }
-           break;
+            camera.rotate_by(dy * (PI / screenH), dx * (PI / screenW));
+            break;
         default:
            break;
      }
@@ -1635,11 +1596,7 @@ void Application::mouse_moved(float x, float y) {
   Vector2D p(x,y);
   update_gl_camera();
   if (mode == MODEL_MODE) {
-    if (action == Action::Smoothen) {
-      scene->getHoveredObject(p, true, true);
-    } else {
-      scene->getHoveredObject(p);
-    }
+    scene->getHoveredObject(p);
   }
   else if (mode == ANIMATE_MODE) {
     if (action == Action::Wave) {

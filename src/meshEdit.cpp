@@ -360,7 +360,7 @@ namespace CMU462 {
     	deleteHalfedge(h2);
     }
 
-    printf("Here!\n");
+//     printf("Here!\n");
     Vector3D centroid = e->centroid();
     auto f1 = h->face();
     auto f2 = h_twin->face();
@@ -371,7 +371,7 @@ namespace CMU462 {
     do {
     	currH->vertex() = newVtx;
     	currH = currH->twin()->next();
-    	printf("No. %d\n",++n);
+//     	printf("No. %d\n",++n);
     } while (currH != h_twin);
     h1_prev->next() = h->next();
     h2_prev->next() = h_twin->next();
@@ -428,7 +428,7 @@ namespace CMU462 {
     deleteHalfedge(h_twin);
 		
 		// printf("Here!\n");	
-    cout<<newVtx->position<<endl;
+//     cout<<newVtx->position<<endl;
     return newVtx;
 
 
@@ -1915,23 +1915,23 @@ namespace CMU462 {
     long int target_num_polygons = current_num_polygons / 4;
 
 
-	cout<<"current_edges: "<<current_num_polygons<<" "<<"target_edges: "<<target_num_polygons<<endl;
+// 	cout<<"current_edges: "<<current_num_polygons<<" "<<"target_edges: "<<target_num_polygons<<endl;
 
     while(target_num_polygons > 0)
     {
-    	printf("Get the best edge\n");
+//     	printf("Get the best edge\n");
     	//get the best edge record
     	EdgeRecord bestEdge = queue.top();
     	
-    	printf("Remove that edge\n");
+//     	printf("Remove that edge\n");
     	//remove this edge from the queue
     	queue.pop();
 
-			printf("Compute the new quadric\n");
+// 			printf("Compute the new quadric\n");
 			//compute the new quadric
 			Matrix4x4 newK = bestEdge.edge->halfedge()->vertex()->quadric + bestEdge.edge->halfedge()->twin()->vertex()->quadric;
 			
-			printf("Remove the touching edges\n");
+// 			printf("Remove the touching edges\n");
 			//remove all the edges at the endpoints from the queue
 			HalfedgeIter h1 = bestEdge.edge->halfedge()->next();
 			HalfedgeIter h2 = bestEdge.edge->halfedge()->twin()->next();
@@ -1948,20 +1948,20 @@ namespace CMU462 {
 				h2 = h2->twin()->next();
 			}while(h2 != bestEdge.edge->halfedge());
 			
-			printf("collapse the new vertex\n");
+// 			printf("collapse the new vertex\n");
 			//collapse the edge
 			VertexIter collapsedVertex = mesh.collapseEdge(bestEdge.edge);
 			
-			printf("Assign the new quadric to the new vertex\n");
+// 			printf("Assign the new quadric to the new vertex\n");
 			//assign the new quadric to the collapsed vertex
 			collapsedVertex->quadric = newK;
 	// 		collapsedVertex->position = bestEdge.optimalPoint;
 			
-			printf("Add all the edges to the queue that touch the new vertex\n");
+// 			printf("Add all the edges to the queue that touch the new vertex\n");
 			//reassign all the edges touching the new vertex and store them again in the queue
 			HalfedgeIter h = collapsedVertex->halfedge();
 			
-			printf("Getting the halfedge of the collapsed vertex\n");
+// 			printf("Getting the halfedge of the collapsed vertex\n");
 			do{
 			
 				EdgeRecord eRecord(h->edge());
@@ -1970,10 +1970,10 @@ namespace CMU462 {
 	    	h = h->twin()->next();
 				
 			}while(h != collapsedVertex->halfedge());
-			printf("Got EdgeRecord\n");
+// 			printf("Got EdgeRecord\n");
 
     	target_num_polygons--;
-    	cout<<target_num_polygons<<endl;
+//     	cout<<target_num_polygons<<endl;
     }
     
 
@@ -2013,32 +2013,32 @@ namespace CMU462 {
     	}
     }
     
-    // vector<EdgeIter> collapseList;
-    EdgeIter next_e = mesh.edgesBegin();
-    for ( EdgeIter e = mesh.edgesBegin(); e != mesh.edgesEnd(); e = next_e )
-    {
-    	// printf("Get next e\n");
-    	next_e = e; next_e++;
-    	auto currEdge = e->getEdge();
-    	if (currEdge != nullptr) {
-    		if (!isnan(e->length())) {
-	    	// printf("Edge Length = %lf\n",e->length());
-	    	if(e->length() < 4.0 * meanLength / 5.0 )//&& e->isNew)
-	    	{
-	    		// printf("Collapse Edge\n");
-	    		while (e->halfedge()->next()->edge() == next_e || e->halfedge()->twin()->next()->edge() == next_e)
-		    	{
-		    		next_e++;
-		    	}
-		    	
-	    		mesh.collapseEdge(e);
-	    		// collapseList.push_back(e);
-	    		// e->isNew = false;	
-	    		
-	    	}
-	    }
-	    }	
-    }
+  //   vector<EdgeIter> collapseList;
+//     EdgeIter next_e = mesh.edgesBegin();
+//     for ( EdgeIter e = mesh.edgesBegin(); e != mesh.edgesEnd(); e = next_e )
+//     {
+//     	printf("Get next e\n");
+//     	next_e = e; next_e++;
+//     	auto currEdge = e->getEdge();
+//     	if (currEdge != nullptr) {
+//     		if (!isnan(e->length())) {
+// 	    	printf("Edge Length = %lf\n",e->length());
+// 	    	if(e->length() < 4.0 * meanLength / 5.0 )//&& e->isNew)
+// 	    	{
+// 	    		printf("Collapse Edge\n");
+// 	    		while (e->halfedge()->next()->edge() == next_e || e->halfedge()->twin()->next()->edge() == next_e)
+// 		    	{
+// 		    		next_e++;
+// 		    	}
+// 		    	
+// 	    		mesh.collapseEdge(e);
+// 	    		collapseList.push_back(e);
+// 	    		e->isNew = false;	
+// 	    		
+// 	    	}
+// 	    }
+// 	    }	
+//     }
     
 		for ( EdgeIter e = mesh.edgesBegin(); e != mesh.edgesEnd(); e++ )
 		{
